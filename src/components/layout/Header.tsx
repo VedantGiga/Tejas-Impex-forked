@@ -116,10 +116,10 @@ export function Header() {
                 ) : (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link to="/auth">Sign In</Link>
+                      <Link to="/login">Sign In</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/auth?mode=signup">Create Account</Link>
+                      <Link to="/signup">Create Account</Link>
                     </DropdownMenuItem>
                   </>
                 )}
