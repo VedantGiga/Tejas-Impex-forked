@@ -157,6 +157,10 @@ export interface Profile {
   email: string | null;
   phone: string | null;
   avatar_url: string | null;
+  business_name: string | null;
+  business_address: string | null;
+  gst_number: string | null;
+  is_verified: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -164,6 +168,16 @@ export interface Profile {
 export interface UserRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'supplier';
   created_at: string;
+}
+
+export interface SupplierProduct {
+  id: string;
+  supplier_id: string;
+  product_id: string;
+  commission_percent: number;
+  is_active: boolean;
+  created_at: string;
+  product?: Product;
 }
