@@ -58,7 +58,7 @@ CREATE POLICY "Suppliers can delete own products" ON public.supplier_products
 CREATE POLICY "Admins can manage supplier products" ON public.supplier_products
   FOR ALL USING (public.has_role(auth.uid(), 'admin'));
 
--- Step 8: Update handle_new_user function
+-- Step 8: Update handle_new_user function (Only specific email can be admin)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -66,9 +66,18 @@ SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
   user_role app_role;
+  requested_role app_role;
+  admin_email TEXT := 'admin@tejasimpex.com'; -- CHANGE THIS TO YOUR ADMIN EMAIL
 BEGIN
-  -- Get role from metadata, default to 'user'
-  user_role := COALESCE((NEW.raw_user_meta_data ->> 'role')::app_role, 'user'::app_role);
+  -- Get requested role from metadata
+  requested_role := COALESCE((NEW.raw_user_meta_data ->> 'role')::app_role, 'user'::app_role);
+  
+  -- Only allow admin role for specific email, otherwise force to user/supplier
+  IF requested_role = 'admin' AND NEW.email != admin_email THEN
+    user_role := 'user'::app_role; -- Force to user if not admin email
+  ELSE
+    user_role := requested_role;
+  END IF;
   
   -- Insert profile
   INSERT INTO public.profiles (id, full_name, email, phone)
