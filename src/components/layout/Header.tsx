@@ -141,24 +141,28 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Wishlist */}
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/wishlist">
-                <Heart className="h-5 w-5" />
-              </Link>
-            </Button>
+            {/* Wishlist - Hidden for suppliers */}
+            {!isSupplier && (
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/wishlist">
+                  <Heart className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
 
-            {/* Cart */}
-            <Button variant="ghost" size="icon" className="relative" asChild>
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
-                )}
-              </Link>
-            </Button>
+            {/* Cart - Hidden for suppliers */}
+            {!isSupplier && (
+              <Button variant="ghost" size="icon" className="relative" asChild>
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+                      {itemCount > 99 ? '99+' : itemCount}
+                    </span>
+                  )}
+                </Link>
+              </Button>
+            )}
 
             {/* Mobile menu toggle */}
             <Button

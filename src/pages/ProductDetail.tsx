@@ -9,7 +9,7 @@ import { Heart, ShoppingCart } from 'lucide-react';
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isSupplier } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [product, setProduct] = useState<any>(null);
@@ -158,22 +158,24 @@ export default function ProductDetail() {
               </span>
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={addToCart}
-                disabled={product.stock_quantity === 0}
-                className="flex-1"
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
-              </Button>
-              <Button
-                variant="outline"
-                onClick={toggleWishlist}
-              >
-                <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-            </div>
+            {!isSupplier && (
+              <div className="flex gap-3">
+                <Button
+                  onClick={addToCart}
+                  disabled={product.stock_quantity === 0}
+                  className="flex-1"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Add to Cart
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={toggleWishlist}
+                >
+                  <Heart className={`h-4 w-4 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

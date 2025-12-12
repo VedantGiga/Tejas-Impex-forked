@@ -6,6 +6,17 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function AdminProducts() {
   const { isAdmin, isLoading } = useAuth();
@@ -28,7 +39,10 @@ export default function AdminProducts() {
   }, [isAdmin, isLoading, navigate]);
 
   const loadProducts = async () => {
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase
+      .from('products')
+      .select('*, product_images(image_url)')
+      .order('created_at', { ascending: false });
     if (data) setProducts(data);
   };
 
@@ -79,12 +93,12 @@ export default function AdminProducts() {
     loadProducts();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name: string) => {
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Success', description: 'Product deleted' });
+      toast({ title: 'Success', description: `Product "${name}" deleted successfully` });
       loadProducts();
     }
   };
@@ -166,6 +180,7 @@ export default function AdminProducts() {
           <table className="w-full">
             <thead className="bg-secondary">
               <tr>
+                <th className="text-left p-4">Image</th>
                 <th className="text-left p-4">Name</th>
                 <th className="text-left p-4">Price</th>
                 <th className="text-left p-4">Stock</th>
@@ -175,17 +190,50 @@ export default function AdminProducts() {
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} className="border-t">
+                  <td className="p-4">
+                    {product.product_images?.[0]?.image_url ? (
+                      <img
+                        src={product.product_images[0].image_url}
+                        alt={product.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-secondary rounded flex items-center justify-center text-xs text-muted-foreground">
+                        No Image
+                      </div>
+                    )}
+                  </td>
                   <td className="p-4">{product.name}</td>
                   <td className="p-4">₹{product.price}</td>
                   <td className="p-4">{product.stock_quantity}</td>
                   <td className="p-4 text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(product.id, product.name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </td>
                 </tr>
               ))}

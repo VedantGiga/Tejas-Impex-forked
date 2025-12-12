@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { getCurrencySymbol } from '@/lib/currency';
 
 export default function Products() {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isSupplier, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
@@ -139,18 +139,22 @@ export default function Products() {
                       <Badge variant="outline" className="text-xs mt-1">{product.currency}</Badge>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
-                  >
-                    <Heart className={`h-4 w-4 ${wishlistIds.has(product.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                  </Button>
+                  {!isSupplier && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+                    >
+                      <Heart className={`h-4 w-4 ${wishlistIds.has(product.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    </Button>
+                  )}
                 </div>
-                {product.stock_quantity > 0 ? (
-                  <Button size="sm" className="w-full mt-2" onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}>Add to Cart</Button>
-                ) : (
-                  <span className="text-sm text-muted-foreground block text-center mt-2">Out of Stock</span>
+                {!isSupplier && (
+                  product.stock_quantity > 0 ? (
+                    <Button size="sm" className="w-full mt-2" onClick={(e) => { e.stopPropagation(); addToCart(product.id); }}>Add to Cart</Button>
+                  ) : (
+                    <span className="text-sm text-muted-foreground block text-center mt-2">Out of Stock</span>
+                  )
                 )}
               </div>
             ))}

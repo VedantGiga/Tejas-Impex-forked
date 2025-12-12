@@ -4,9 +4,20 @@ import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Clock, Mail, Phone, Building, ArrowLeft, MapPin, FileText, Package } from 'lucide-react';
+import { Check, X, Clock, Mail, Phone, Building, ArrowLeft, MapPin, FileText, Package, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface SupplierDetail {
   id: string;
@@ -117,6 +128,20 @@ export default function SupplierDetail() {
         title: 'Success', 
         description: `Product ${status === 'approved' ? 'approved' : 'rejected'} successfully` 
       });
+      loadSupplierProducts();
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Success', description: `Product "${productName}" deleted successfully` });
       loadSupplierProducts();
     }
   };
@@ -356,25 +381,55 @@ export default function SupplierDetail() {
                     <div>
                       {getStatusBadge(product.approval_status)}
                     </div>
-                    {product.approval_status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm"
-                          onClick={() => handleProductApproval(product.id, 'approved')}
-                          className="bg-green-600 hover:bg-green-700 h-8"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          size="sm"
-                          onClick={() => handleProductApproval(product.id, 'rejected')}
-                          variant="destructive"
-                          className="h-8"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      {product.approval_status === 'pending' && (
+                        <>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleProductApproval(product.id, 'approved')}
+                            className="bg-green-600 hover:bg-green-700 h-8"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleProductApproval(product.id, 'rejected')}
+                            variant="destructive"
+                            className="h-8"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm"
+                            variant="destructive"
+                            className="h-8"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))}

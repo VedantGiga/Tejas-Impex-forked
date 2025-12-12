@@ -7,6 +7,7 @@ import { ShoppingCart, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Brand {
   id: string;
@@ -31,6 +32,7 @@ export default function BrandDetail() {
   const { slug } = useParams();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { isSupplier } = useAuth();
   const [brand, setBrand] = useState<Brand | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,20 +155,22 @@ export default function BrandDetail() {
                           </>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.stock_quantity === 0}
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-1" />
-                          {product.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Heart className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {!isSupplier && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={product.stock_quantity === 0}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-1" />
+                            {product.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Heart className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
