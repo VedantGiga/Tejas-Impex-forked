@@ -21,8 +21,12 @@ import Orders from "./pages/Orders";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
 import AdminSupplierApprovals from "./pages/admin/SupplierApprovals";
+import AdminSupplierDetail from "./pages/admin/SupplierDetail";
 import SupplierDashboard from "./pages/SupplierDashboard";
 import SupplierPending from "./pages/SupplierPending";
+import SupplierAddProduct from "./pages/supplier/AddProduct";
+import SupplierEditProduct from "./pages/supplier/EditProduct";
+import SupplierOrders from "./pages/supplier/Orders";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -55,8 +59,12 @@ const App = () => (
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>} />
               <Route path="/admin/suppliers" element={<ProtectedRoute requireAdmin><AdminSupplierApprovals /></ProtectedRoute>} />
+              <Route path="/admin/suppliers/:id" element={<ProtectedRoute requireAdmin><AdminSupplierDetail /></ProtectedRoute>} />
               <Route path="/supplier" element={<ProtectedRoute requireSupplier><SupplierDashboard /></ProtectedRoute>} />
               <Route path="/supplier-pending" element={<ProtectedRoute requireSupplier><SupplierPending /></ProtectedRoute>} />
+              <Route path="/supplier/add-product" element={<ProtectedRoute requireSupplier><SupplierAddProduct /></ProtectedRoute>} />
+              <Route path="/supplier/edit-product/:id" element={<ProtectedRoute requireSupplier><SupplierEditProduct /></ProtectedRoute>} />
+              <Route path="/supplier/orders" element={<ProtectedRoute requireSupplier><SupplierOrders /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -96,6 +96,7 @@ export interface OrderItem {
   product_snapshot: Product;
   quantity: number;
   price: number;
+  supplier_status?: 'pending' | 'accepted' | 'rejected';
   created_at: string;
 }
 

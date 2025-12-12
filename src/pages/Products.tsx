@@ -6,9 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { getCurrencySymbol } from '@/lib/currency';
 
 export default function Products() {
-  const { user } = useAuth();
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
@@ -16,11 +18,16 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProducts();
-    if (user) loadWishlistIds();
-  }, [user]);
+    if (!authLoading) {
+      loadProducts();
+      if (user) loadWishlistIds();
+    }
+  }, [user, isAdmin, authLoading]);
 
   const loadProducts = async () => {
+    // RLS policies handle filtering:
+    // - Admins see all products
+    // - Public sees only approved INR products
     const { data } = await supabase
       .from('products')
       .select(`
@@ -28,6 +35,7 @@ export default function Products() {
         product_images(image_url)
       `)
       .eq('is_active', true)
+      .eq('approval_status', 'approved')
       .order('created_at', { ascending: false });
     
     if (data) setProducts(data);
@@ -123,7 +131,14 @@ export default function Products() {
                   {product.description || 'Premium imported product'}
                 </p>
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-primary">₹{product.price}</p>
+                  <div>
+                    <p className="font-bold text-primary">
+                      {getCurrencySymbol(product.currency)}{product.price}
+                    </p>
+                    {isAdmin && product.currency !== 'INR' && (
+                      <Badge variant="outline" className="text-xs mt-1">{product.currency}</Badge>
+                    )}
+                  </div>
                   <Button
                     size="sm"
                     variant="ghost"

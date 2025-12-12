@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface SupplierRequest {
 }
 
 export default function SupplierApprovals() {
+  const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState<SupplierRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -102,9 +104,14 @@ export default function SupplierApprovals() {
               <div key={supplier.id} className="bg-card rounded-lg border p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-semibold">{supplier.full_name}</h3>
+                    <h3 
+                      className="text-xl font-semibold text-primary hover:underline cursor-pointer"
+                      onClick={() => navigate(`/admin/suppliers/${supplier.id}`)}
+                    >
+                      {supplier.full_name}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      Registered: {new Date(supplier.created_at).toLocaleDateString()}
+                      ID: {supplier.id.slice(0, 8)}... | Registered: {new Date(supplier.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   {getStatusBadge(supplier.approval_status)}
