@@ -124,6 +124,7 @@ export default function SupplierDashboard() {
                         variant="outline" 
                         size="sm"
                         onClick={() => navigate(`/supplier/edit-product/${product.id}`)}
+                        disabled={product.approval_status === 'approved'}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -131,6 +132,7 @@ export default function SupplierDashboard() {
                         variant="destructive" 
                         size="sm"
                         onClick={() => handleDelete(product.id)}
+                        disabled={product.approval_status === 'approved'}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -1,35 +1,100 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowRight, MapPin } from 'lucide-react';
 
-const brands = [
-  { name: 'Lindt', country: 'Switzerland', desc: 'Premium Swiss chocolate' },
-  { name: 'Ferrero', country: 'Italy', desc: 'Iconic Italian confectionery' },
-  { name: 'Godiva', country: 'Belgium', desc: 'Luxury Belgian chocolates' },
-  { name: 'Kelloggs', country: 'USA', desc: 'Breakfast cereals & snacks' },
-  { name: 'Nestlé', country: 'Switzerland', desc: 'Global food & beverage' },
-  { name: 'Cadbury', country: 'UK', desc: 'British chocolate brand' },
-];
+interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  country: string | null;
+  short_description: string | null;
+}
 
 export default function Brands() {
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBrands();
+  }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const { data } = await supabase
+        .from('brands')
+        .select('id, name, slug, country, short_description')
+        .eq('is_active', true)
+        .order('name');
+      setBrands(data || []);
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
-      <div className="container py-8">
-        <h1 className="font-display text-4xl font-bold mb-6">Brands</h1>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {brands.map((brand) => (
-            <Link
-              key={brand.name}
-              to={`/brands/${brand.name.toLowerCase()}`}
-              className="group p-6 bg-card rounded-lg border hover:border-primary hover:shadow-lg transition-all"
-            >
-              <div className="h-20 flex items-center justify-center mb-4 bg-secondary rounded-md">
-                <span className="font-display text-2xl font-bold text-primary">{brand.name}</span>
-              </div>
-              <h3 className="font-semibold group-hover:text-primary transition-colors">{brand.name}</h3>
-              <p className="text-sm text-muted-foreground">{brand.country}</p>
-              <p className="text-sm text-muted-foreground mt-1">{brand.desc}</p>
-            </Link>
-          ))}
+      <div className="bg-gradient-to-br from-primary/5 via-background to-accent/5 py-12">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h1 className="font-display text-5xl font-bold mb-4">Premium Brands</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Discover authentic international brands bringing world-class quality to your doorstep
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">Loading brands...</div>
+          ) : brands.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">No brands available</div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {brands.map((brand) => (
+                <Link
+                  key={brand.id}
+                  to={`/brands/${brand.slug}`}
+                  className="group relative bg-card rounded-xl border-2 border-border hover:border-primary overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="relative p-6">
+                    <div className="h-32 flex items-center justify-center mb-6 bg-gradient-to-br from-secondary to-secondary/50 rounded-lg">
+                      <span className="font-display text-3xl font-bold text-primary group-hover:scale-110 transition-transform">
+                        {brand.name}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h3 className="font-display text-xl font-bold group-hover:text-primary transition-colors">
+                        {brand.name}
+                      </h3>
+                      
+                      {brand.country && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{brand.country}</span>
+                        </div>
+                      )}
+                      
+                      {brand.short_description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {brand.short_description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center gap-2 text-primary font-medium text-sm pt-2">
+                        <span>Explore Products</span>
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

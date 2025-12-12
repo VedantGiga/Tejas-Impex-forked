@@ -11,6 +11,7 @@ DROP POLICY IF EXISTS "Suppliers can view products" ON public.products;
 DROP POLICY IF EXISTS "Anyone can view approved active products" ON public.products;
 DROP POLICY IF EXISTS "Admins can view all products" ON public.products;
 DROP POLICY IF EXISTS "Suppliers can view own products" ON public.products;
+DROP POLICY IF EXISTS "Public can view approved INR products" ON public.products;
 
 -- Admins can view all products (highest priority)
 CREATE POLICY "Admins can view all products" ON public.products
@@ -29,4 +30,22 @@ CREATE POLICY "Public can view approved INR products" ON public.products
     is_active = true AND 
     approval_status = 'approved' AND 
     currency = 'INR'
+  );
+
+-- Suppliers can only update their own products if not approved
+DROP POLICY IF EXISTS "Suppliers can update own products" ON public.products;
+CREATE POLICY "Suppliers can update own products" ON public.products
+  FOR UPDATE USING (
+    public.has_role(auth.uid(), 'supplier') AND 
+    auth.uid() = supplier_id AND
+    approval_status != 'approved'
+  );
+
+-- Suppliers can only delete their own products if not approved
+DROP POLICY IF EXISTS "Suppliers can delete own products" ON public.products;
+CREATE POLICY "Suppliers can delete own products" ON public.products
+  FOR DELETE USING (
+    public.has_role(auth.uid(), 'supplier') AND 
+    auth.uid() = supplier_id AND
+    approval_status != 'approved'
   );

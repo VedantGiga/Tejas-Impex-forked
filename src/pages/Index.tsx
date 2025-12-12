@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Truck, Shield, Clock, Award } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
   { icon: Truck, title: 'Free Shipping', desc: 'On orders above ₹999' },
@@ -10,23 +12,58 @@ const features = [
   { icon: Award, title: 'Premium Quality', desc: 'Curated selection' },
 ];
 
-const featuredBrands = [
-  { name: 'Lindt', country: 'Switzerland', desc: 'Premium Swiss chocolate' },
-  { name: 'Ferrero', country: 'Italy', desc: 'Iconic Italian confectionery' },
-  { name: 'Godiva', country: 'Belgium', desc: 'Luxury Belgian chocolates' },
-  { name: 'Kelloggs', country: 'USA', desc: 'Breakfast cereals & snacks' },
-];
+interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  country: string | null;
+  short_description: string | null;
+}
 
-const categories = [
-  { name: 'Gourmet Food', slug: 'gourmet-food' },
-  { name: 'Snacks', slug: 'snacks' },
-  { name: 'Beverages', slug: 'beverages' },
-  { name: 'Bakery', slug: 'bakery' },
-  { name: 'Dairy', slug: 'dairy' },
-  { name: 'Condiments', slug: 'condiments' },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export default function Index() {
+  const [featuredBrands, setFeaturedBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchFeaturedBrands();
+    fetchCategories();
+  }, []);
+
+  const fetchFeaturedBrands = async () => {
+    try {
+      const { data } = await supabase
+        .from('brands')
+        .select('id, name, slug, country, short_description')
+        .eq('is_active', true)
+        .eq('is_featured', true)
+        .order('name')
+        .limit(4);
+      setFeaturedBrands(data || []);
+    } catch (error) {
+      console.error('Error fetching featured brands:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .eq('is_active', true)
+        .order('display_order')
+        .limit(6);
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -87,20 +124,24 @@ export default function Index() {
             </Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredBrands.map((brand) => (
-              <Link
-                key={brand.name}
-                to={`/brands/${brand.name.toLowerCase()}`}
-                className="group p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="h-20 flex items-center justify-center mb-4 bg-secondary rounded-md">
-                  <span className="font-display text-2xl font-bold text-primary">{brand.name}</span>
-                </div>
-                <h3 className="font-semibold group-hover:text-primary transition-colors">{brand.name}</h3>
-                <p className="text-sm text-muted-foreground">{brand.country}</p>
-                <p className="text-sm text-muted-foreground mt-1">{brand.desc}</p>
-              </Link>
-            ))}
+            {featuredBrands.length === 0 ? (
+              <div className="col-span-4 text-center py-8 text-muted-foreground">No featured brands available</div>
+            ) : (
+              featuredBrands.map((brand) => (
+                <Link
+                  key={brand.id}
+                  to={`/brands/${brand.slug}`}
+                  className="group p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="h-20 flex items-center justify-center mb-4 bg-secondary rounded-md">
+                    <span className="font-display text-2xl font-bold text-primary">{brand.name}</span>
+                  </div>
+                  <h3 className="font-semibold group-hover:text-primary transition-colors">{brand.name}</h3>
+                  <p className="text-sm text-muted-foreground">{brand.country || '-'}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{brand.short_description || '-'}</p>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -113,18 +154,22 @@ export default function Index() {
             <p className="text-muted-foreground mt-2">Find exactly what you're looking for</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((cat) => (
-              <Link
-                key={cat.slug}
-                to={`/products?category=${cat.slug}`}
-                className="group p-6 bg-card rounded-lg border border-border text-center hover:border-primary hover:shadow-md transition-all"
-              >
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <span className="text-xl">🍽️</span>
-                </div>
-                <h3 className="font-medium text-sm group-hover:text-primary transition-colors">{cat.name}</h3>
-              </Link>
-            ))}
+            {categories.length === 0 ? (
+              <div className="col-span-6 text-center py-8 text-muted-foreground">No categories available</div>
+            ) : (
+              categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  to={`/category/${cat.slug}`}
+                  className="group p-6 bg-card rounded-lg border border-border text-center hover:border-primary hover:shadow-md transition-all"
+                >
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <span className="text-xl">🍽️</span>
+                  </div>
+                  <h3 className="font-medium text-sm group-hover:text-primary transition-colors">{cat.name}</h3>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>

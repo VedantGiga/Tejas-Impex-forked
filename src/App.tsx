@@ -9,10 +9,13 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Categories from "./pages/Categories";
+import CategoryDetail from "./pages/CategoryDetail";
 import Offers from "./pages/Offers";
 import NewArrivals from "./pages/NewArrivals";
 import ContactUs from "./pages/ContactUs";
+import AboutUs from "./pages/AboutUs";
 import Brands from "./pages/Brands";
+import BrandDetail from "./pages/BrandDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Cart from "./pages/Cart";
@@ -20,6 +23,8 @@ import Wishlist from "./pages/Wishlist";
 import Orders from "./pages/Orders";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products";
+import AdminBrands from "./pages/admin/Brands";
+import AdminCategories from "./pages/admin/Categories";
 import AdminSupplierApprovals from "./pages/admin/SupplierApprovals";
 import AdminSupplierDetail from "./pages/admin/SupplierDetail";
 import SupplierDashboard from "./pages/SupplierDashboard";
@@ -46,10 +51,13 @@ const App = () => (
               <Route path="/products" element={<Products />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/category/:slug" element={<CategoryDetail />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
               <Route path="/contact" element={<ContactUs />} />
+              <Route path="/about" element={<AboutUs />} />
               <Route path="/brands" element={<Brands />} />
+              <Route path="/brands/:slug" element={<BrandDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/cart" element={<Cart />} />
@@ -58,6 +66,8 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
               <Route path="/admin/products" element={<ProtectedRoute requireAdmin><AdminProducts /></ProtectedRoute>} />
+              <Route path="/admin/brands" element={<ProtectedRoute requireAdmin><AdminBrands /></ProtectedRoute>} />
+              <Route path="/admin/categories" element={<ProtectedRoute requireAdmin><AdminCategories /></ProtectedRoute>} />
               <Route path="/admin/suppliers" element={<ProtectedRoute requireAdmin><AdminSupplierApprovals /></ProtectedRoute>} />
               <Route path="/admin/suppliers/:id" element={<ProtectedRoute requireAdmin><AdminSupplierDetail /></ProtectedRoute>} />
               <Route path="/supplier" element={<ProtectedRoute requireSupplier><SupplierDashboard /></ProtectedRoute>} />
