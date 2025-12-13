@@ -18,41 +18,95 @@ export default function ProductApprovals() {
     else loadProducts();
   }, [isAdmin, isLoading, navigate]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('admin-products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          console.log('Product updated:', payload);
+          // Remove product from list if status changed
+          if (payload.new.approval_status !== 'pending') {
+            setProducts(prev => prev.filter(p => p.id !== payload.new.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'products'
+        },
+        () => {
+          loadProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
+
   const loadProducts = async () => {
     const { data } = await supabase
       .from('products')
-      .select('*, product_images(image_url), profiles!products_supplier_id_fkey(full_name)')
+      .select('*')
       .eq('approval_status', 'pending')
       .order('created_at', { ascending: false });
-    if (data) setProducts(data);
+    
+    if (!data) return;
+
+    const productIds = data.map(p => p.id);
+    const supplierIds = data.map(p => p.supplier_id).filter(Boolean);
+
+    const [images, profiles] = await Promise.all([
+      supabase.from('product_images').select('product_id, image_url').in('product_id', productIds),
+      supabase.from('profiles').select('id, full_name').in('id', supplierIds)
+    ]);
+
+    const productsWithData = data.map(p => ({
+      ...p,
+      product_images: images.data?.filter(img => img.product_id === p.id) || [],
+      profiles: profiles.data?.find(prof => prof.id === p.supplier_id)
+    }));
+
+    setProducts(productsWithData);
   };
 
   const handleApproval = async (productId: string, status: 'approved' | 'rejected') => {
     const product = products.find(p => p.id === productId);
-    const updates: any = { approval_status: status };
+    if (!product) return;
+
+    // Remove from UI FIRST
+    setProducts(products.filter(p => p.id !== productId));
+
+    const updates: any = { approval_status: status === 'approved' ? 'finance_pending' : 'rejected' };
     
     if (status === 'approved') {
-      const priceInput = document.querySelector(`input[data-price-id="${productId}"]`) as HTMLInputElement;
-      const stockInput = document.querySelector(`input[data-stock-id="${productId}"]`) as HTMLInputElement;
+      updates.supplier_price = product.price;
+      updates.finance_status = 'pending';
       
-      if (priceInput?.value) {
-        updates.admin_price = parseFloat(priceInput.value);
-      }
-      if (stockInput?.value) {
-        updates.stock_quantity = parseInt(stockInput.value);
-      }
+      const stockInput = document.querySelector(`input[data-stock-id="${productId}"]`) as HTMLInputElement;
+      if (stockInput?.value) updates.stock_quantity = parseInt(stockInput.value);
     }
 
-    const { error } = await supabase
-      .from('products')
-      .update(updates)
-      .eq('id', productId);
+    const { error } = await supabase.from('products').update(updates).eq('id', productId);
 
     if (error) {
+      setProducts([...products]);
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Success', description: `Product ${status}` });
-      loadProducts();
+      toast({ title: 'Success', description: status === 'approved' ? '✅ Sent to Finance!' : 'Rejected' });
     }
   };
 
@@ -100,17 +154,6 @@ export default function ProductApprovals() {
                         <p className="text-lg font-bold text-muted-foreground">{product.stock_quantity}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium block mb-1">Set Admin Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={product.price}
-                          data-price-id={product.id}
-                          className="w-full px-3 py-2 rounded border bg-background"
-                          placeholder="Price"
-                        />
-                      </div>
-                      <div>
                         <label className="text-sm font-medium block mb-1">Set Stock Quantity</label>
                         <input
                           type="number"
@@ -128,7 +171,7 @@ export default function ProductApprovals() {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Check className="h-4 w-4 mr-2" />
-                        Approve
+                        Send to Finance
                       </Button>
                       <Button
                         onClick={() => handleApproval(product.id, 'rejected')}

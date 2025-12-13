@@ -1,0 +1,289 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { DollarSign, Package, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
+
+interface Product {
+  id: string;
+  name: string;
+  supplier_price: number;
+  finance_price: number | null;
+  supplier_name: string;
+  supplier_email: string;
+  image_url: string;
+  description: string;
+  created_at: string;
+}
+
+export default function FinanceDashboard() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFinance, setIsFinance] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    checkFinanceRole();
+  }, []);
+
+  useEffect(() => {
+    if (!isFinance) return;
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('finance-products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          console.log('Finance: Product updated:', payload);
+          // Add product if it became finance_pending
+          if (payload.new.approval_status === 'finance_pending') {
+            loadPendingProducts();
+          }
+          // Remove product if it's no longer finance_pending
+          if (payload.old?.approval_status === 'finance_pending' && payload.new.approval_status !== 'finance_pending') {
+            setProducts(prev => prev.filter(p => p.id !== payload.new.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isFinance]);
+
+  const checkFinanceRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (roleData?.role === 'finance') {
+      setIsFinance(true);
+      loadPendingProducts();
+    } else {
+      toast({ title: 'Access Denied', description: 'Finance role required', variant: 'destructive' });
+      navigate('/');
+    }
+  };
+
+  const loadPendingProducts = async () => {
+    setLoading(true);
+    console.log('🔄 Loading finance pending products...');
+    
+    try {
+      // Query products with finance_pending status
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, description, supplier_price, finance_price, created_at, supplier_id')
+        .eq('approval_status', 'finance_pending')
+        .order('created_at', { ascending: false });
+
+      if (productsError) {
+        console.error('❌ Products error:', productsError);
+        toast({ title: 'Error', description: 'Failed to load products', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+
+      console.log('📊 Found products:', productsData?.length || 0);
+
+      if (!productsData || productsData.length === 0) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get product images and supplier profiles separately
+      const productIds = productsData.map(p => p.id);
+      const supplierIds = productsData.map(p => p.supplier_id).filter(Boolean);
+
+      const [imagesResult, profilesResult] = await Promise.all([
+        supabase.from('product_images').select('product_id, image_url').in('product_id', productIds),
+        supabase.from('profiles').select('id, full_name, email').in('id', supplierIds)
+      ]);
+
+      // Transform data
+      const transformedData = productsData.map(p => {
+        const image = imagesResult.data?.find(img => img.product_id === p.id);
+        const profile = profilesResult.data?.find(prof => prof.id === p.supplier_id);
+        
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          supplier_price: p.supplier_price,
+          finance_price: p.finance_price,
+          created_at: p.created_at,
+          image_url: image?.image_url || '',
+          supplier_name: profile?.full_name || 'N/A',
+          supplier_email: profile?.email || 'N/A',
+        };
+      });
+
+      console.log('✅ Loaded products:', transformedData.length);
+      setProducts(transformedData);
+    } catch (err) {
+      console.error('❌ Exception:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePrice = async (productId: string, newPrice: number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { error } = await supabase
+      .from('products')
+      .update({ 
+        finance_price: newPrice,
+        price: newPrice,
+        finance_status: 'approved',
+        approval_status: 'approved',
+        finance_approved_at: new Date().toISOString(),
+        finance_approved_by: user?.id
+      })
+      .eq('id', productId);
+
+    if (error) {
+      console.error('Finance update error:', error);
+      toast({ title: 'Error', description: 'Failed to update price', variant: 'destructive' });
+    } else {
+      console.log('Finance update success');
+      toast({ title: 'Success', description: 'Price updated! Product is now live for customers.' });
+      // Immediately remove from list
+      setProducts(prev => prev.filter(p => p.id !== productId));
+    }
+  };
+
+  if (loading) return <Layout><div className="container py-8">Loading...</div></Layout>;
+  if (!isFinance) return null;
+
+  return (
+    <Layout>
+      <div className="container py-8">
+        <div className="flex items-center gap-3 mb-8">
+          <DollarSign className="h-10 w-10 text-primary" />
+          <h1 className="font-display text-4xl font-bold">Finance Dashboard</h1>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-card rounded-lg border p-6">
+            <Package className="h-8 w-8 text-primary mb-2" />
+            <h3 className="font-semibold text-2xl">{products.length}</h3>
+            <p className="text-muted-foreground">Pending Products</p>
+          </div>
+          <div className="bg-card rounded-lg border p-6">
+            <TrendingUp className="h-8 w-8 text-green-500 mb-2" />
+            <h3 className="font-semibold text-2xl">0</h3>
+            <p className="text-muted-foreground">Approved Today</p>
+          </div>
+          <div className="bg-card rounded-lg border p-6">
+            <DollarSign className="h-8 w-8 text-blue-500 mb-2" />
+            <h3 className="font-semibold text-2xl">₹0</h3>
+            <p className="text-muted-foreground">Total Revenue</p>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg border p-6">
+          <h2 className="text-2xl font-bold mb-6">Products Awaiting Price Approval</h2>
+          
+          {products.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No products pending approval</p>
+          ) : (
+            <div className="space-y-4">
+              {products.map((product) => (
+                <ProductPriceCard 
+                  key={product.id} 
+                  product={product} 
+                  onUpdatePrice={updatePrice}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+function ProductPriceCard({ 
+  product, 
+  onUpdatePrice 
+}: { 
+  product: Product; 
+  onUpdatePrice: (id: string, price: number) => void;
+}) {
+  const [newPrice, setNewPrice] = useState(product.supplier_price?.toString() || '0');
+  const [margin, setMargin] = useState(0);
+
+  const calculateMargin = (price: number) => {
+    const supplierPrice = product.supplier_price || 0;
+    if (supplierPrice === 0) return 0;
+    return ((price - supplierPrice) / supplierPrice * 100).toFixed(2);
+  };
+
+  const handlePriceChange = (value: string) => {
+    setNewPrice(value);
+    const price = parseFloat(value) || 0;
+    setMargin(parseFloat(calculateMargin(price)));
+  };
+
+  return (
+    <div className="border rounded-lg p-4 flex gap-4">
+      <img 
+        src={product.image_url} 
+        alt={product.name}
+        className="w-24 h-24 object-cover rounded"
+      />
+      <div className="flex-1">
+        <h3 className="font-semibold text-lg">{product.name}</h3>
+        <p className="text-sm text-muted-foreground mb-2">{product.description?.substring(0, 100)}...</p>
+        <div className="flex gap-4 text-sm">
+          <span>Supplier: <strong>{product.supplier_name}</strong></span>
+          <span>Supplier Price: <strong>{formatCurrency(product.supplier_price || 0)}</strong></span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 min-w-[200px]">
+        <label className="text-sm font-medium">Set Final Price</label>
+        <input
+          type="number"
+          value={newPrice}
+          onChange={(e) => handlePriceChange(e.target.value)}
+          className="px-3 py-2 rounded-md border bg-background"
+          placeholder="Enter price"
+          step="0.01"
+        />
+        <div className="text-sm">
+          Margin: <span className={margin >= 0 ? 'text-green-600' : 'text-red-600'}>
+            {margin}%
+          </span>
+        </div>
+        <Button 
+          onClick={() => onUpdatePrice(product.id, parseFloat(newPrice))}
+          disabled={!newPrice || parseFloat(newPrice) <= 0}
+          className="w-full"
+        >
+          Approve & Set Price
+        </Button>
+      </div>
+    </div>
+  );
+}

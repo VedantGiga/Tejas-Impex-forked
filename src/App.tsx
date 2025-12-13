@@ -18,7 +18,9 @@ import Brands from "./pages/Brands";
 import BrandDetail from "./pages/BrandDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import AdminLogin from "./pages/AdminLogin";
+import FinanceDashboard from "./pages/finance/Dashboard";
+import AdminCreateFinance from "./pages/admin/CreateFinance";
+import AdminFinanceUsers from "./pages/admin/FinanceUsers";
 import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Orders from "./pages/Orders";
@@ -64,7 +66,9 @@ const App = () => (
               <Route path="/brands/:slug" element={<BrandDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/admin-access" element={<AdminLogin />} />
+              <Route path="/admin/finance-users" element={<ProtectedRoute requireAdmin><AdminFinanceUsers /></ProtectedRoute>} />
+              <Route path="/admin/create-finance" element={<ProtectedRoute requireAdmin><AdminCreateFinance /></ProtectedRoute>} />
+              <Route path="/finance" element={<FinanceDashboard />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/orders" element={<Orders />} />

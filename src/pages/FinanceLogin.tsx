@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DollarSign } from 'lucide-react';
 
-export default function Login() {
+export default function FinanceLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ export default function Login() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      toast({ title: 'Login Failed', description: error.message || 'Invalid email or password', variant: 'destructive' });
+      toast({ title: 'Login Failed', description: error.message || 'Invalid credentials', variant: 'destructive' });
       setLoading(false);
       return;
     }
@@ -31,28 +32,12 @@ export default function Login() {
         .eq('user_id', data.user.id)
         .maybeSingle();
       
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('approval_status')
-        .eq('id', data.user.id)
-        .single();
-      
-      toast({ title: 'Success', description: 'Logged in successfully' });
-      
-      if (roleData?.role === 'admin') {
-        navigate('/admin');
-      } else if (roleData?.role === 'finance') {
+      if (roleData?.role === 'finance') {
+        toast({ title: 'Success', description: 'Finance logged in successfully' });
         navigate('/finance');
-      } else if (roleData?.role === 'supplier') {
-        if (profileData?.approval_status === 'pending') {
-          navigate('/supplier-pending');
-        } else if (profileData?.approval_status === 'approved') {
-          navigate('/supplier');
-        } else {
-          navigate('/');
-        }
       } else {
-        navigate('/');
+        await supabase.auth.signOut();
+        toast({ title: 'Access Denied', description: 'Finance credentials required', variant: 'destructive' });
       }
     }
     setLoading(false);
@@ -62,7 +47,11 @@ export default function Login() {
     <Layout>
       <div className="container max-w-md py-16">
         <div className="bg-card rounded-lg border p-8">
-          <h1 className="font-display text-3xl font-bold mb-6 text-center">Login</h1>
+          <div className="flex items-center justify-center mb-6">
+            <DollarSign className="h-12 w-12 text-primary" />
+          </div>
+          <h1 className="font-display text-3xl font-bold mb-2 text-center">Finance Access</h1>
+          <p className="text-center text-sm text-muted-foreground mb-6">Finance team login</p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
@@ -85,15 +74,9 @@ export default function Login() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Verifying...' : 'Access Finance Panel'}
             </Button>
           </form>
-          <p className="text-center mt-4 text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
         </div>
       </div>
     </Layout>

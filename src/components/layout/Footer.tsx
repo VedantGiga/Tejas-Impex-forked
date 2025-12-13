@@ -122,15 +122,7 @@ export function Footer() {
                 <span>hello@tejasimpex.com</span>
               </li>
             </ul>
-            {!user && (
-              <div className="mt-4">
-                <Link to="/admin-access">
-                  <Button variant="secondary" size="sm" className="w-full">
-                    Admin Dashboard
-                  </Button>
-                </Link>
-              </div>
-            )}
+
           </div>
         </div>
 

@@ -1,0 +1,2 @@
+-- DEPRECATED: Use 20251207000017_add_finance_role_step1.sql and 20251207000018_add_finance_workflow.sql instead
+-- This file has been split into two migrations to avoid enum transaction issues

@@ -10,7 +10,8 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'user' | 'supplier'>('user');
+  const [role, setRole] = useState<'user' | 'supplier' | 'admin'>('user');
+  const [businessAddress, setBusinessAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export default function Signup() {
           full_name: fullName,
           phone,
           role,
+          business_address: role === 'supplier' ? businessAddress : null,
         },
       },
     });
@@ -76,6 +78,18 @@ export default function Signup() {
                 required
               />
             </div>
+            {role === 'supplier' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Business Address</label>
+                <textarea
+                  value={businessAddress}
+                  onChange={(e) => setBusinessAddress(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md border bg-background min-h-[80px]"
+                  placeholder="Enter your complete business address"
+                  required
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium mb-2">Password</label>
               <input
@@ -94,7 +108,7 @@ export default function Signup() {
                     type="radio"
                     value="user"
                     checked={role === 'user'}
-                    onChange={(e) => setRole(e.target.value as 'user' | 'supplier')}
+                    onChange={(e) => setRole(e.target.value as 'user' | 'supplier' | 'admin')}
                     className="w-4 h-4"
                   />
                   <span>User</span>
@@ -104,10 +118,20 @@ export default function Signup() {
                     type="radio"
                     value="supplier"
                     checked={role === 'supplier'}
-                    onChange={(e) => setRole(e.target.value as 'user' | 'supplier')}
+                    onChange={(e) => setRole(e.target.value as 'user' | 'supplier' | 'admin')}
                     className="w-4 h-4"
                   />
                   <span>Supplier</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="admin"
+                    checked={role === 'admin'}
+                    onChange={(e) => setRole(e.target.value as 'user' | 'supplier' | 'admin')}
+                    className="w-4 h-4"
+                  />
+                  <span>Admin</span>
                 </label>
               </div>
             </div>

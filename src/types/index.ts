@@ -169,7 +169,7 @@ export interface Profile {
 export interface UserRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'user' | 'supplier';
+  role: 'admin' | 'user' | 'supplier' | 'finance';
   created_at: string;
 }
 

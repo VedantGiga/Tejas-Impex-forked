@@ -71,6 +71,11 @@ export default function AdminDashboard() {
             <h3 className="font-semibold text-xl mb-2">Product Approvals</h3>
             <p className="text-muted-foreground">Review and approve supplier products</p>
           </Link>
+          <Link to="/admin/finance-users" className="bg-card rounded-lg border p-6 hover:border-primary transition-colors">
+            <Users className="h-6 w-6 text-primary mb-2" />
+            <h3 className="font-semibold text-xl mb-2">Finance Team</h3>
+            <p className="text-muted-foreground">Manage finance users</p>
+          </Link>
           <div className="bg-card rounded-lg border p-6 opacity-50">
             <ShoppingBag className="h-6 w-6 text-muted-foreground mb-2" />
             <h3 className="font-semibold text-xl mb-2">Manage Orders</h3>
