@@ -32,6 +32,7 @@ import SupplierPending from "./pages/SupplierPending";
 import SupplierAddProduct from "./pages/supplier/AddProduct";
 import SupplierEditProduct from "./pages/supplier/EditProduct";
 import SupplierOrders from "./pages/supplier/Orders";
+import SupplierNewOrders from "./pages/supplier/NewOrders";
 import OrderTracking from "./pages/OrderTracking";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/supplier/add-product" element={<ProtectedRoute requireSupplier><SupplierAddProduct /></ProtectedRoute>} />
               <Route path="/supplier/edit-product/:id" element={<ProtectedRoute requireSupplier><SupplierEditProduct /></ProtectedRoute>} />
               <Route path="/supplier/orders" element={<ProtectedRoute requireSupplier><SupplierOrders /></ProtectedRoute>} />
+              <Route path="/supplier/new-orders" element={<ProtectedRoute requireSupplier><SupplierNewOrders /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

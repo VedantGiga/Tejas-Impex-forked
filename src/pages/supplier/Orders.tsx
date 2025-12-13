@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Package, Check, X } from 'lucide-react';
+import { ArrowLeft, Package, Check, X, RefreshCw, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Order } from '@/types';
 
@@ -14,6 +14,7 @@ export default function SupplierOrders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRealtime, setIsRealtime] = useState(true);
 
   useEffect(() => {
     if (!isSupplier) {
@@ -21,20 +22,80 @@ export default function SupplierOrders() {
       return;
     }
     loadOrders();
+
+    // Set up real-time subscription
+    const ordersChannel = supabase
+      .channel('supplier-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          loadOrders();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_items'
+        },
+        () => {
+          loadOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+    };
   }, [isSupplier, navigate]);
 
   const loadOrders = async () => {
     setLoading(true);
     
+    // First get supplier's products
+    const { data: supplierProducts } = await supabase
+      .from('products')
+      .select('id')
+      .eq('supplier_id', user?.id);
+
+    if (!supplierProducts || supplierProducts.length === 0) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
+    const productIds = supplierProducts.map(p => p.id);
+
+    // Get order items for supplier's products
     const { data: orderItems } = await supabase
       .from('order_items')
       .select(`
         *,
-        order:orders(*),
+        order:orders!inner(*),
         product:products(*)
       `)
-      .eq('products.supplier_id', user?.id)
+      .in('product_id', productIds)
       .order('created_at', { ascending: false });
+
+    // Get user details for each order
+    if (orderItems && orderItems.length > 0) {
+      const userIds = [...new Set(orderItems.map((item: any) => item.order.user_id))];
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, phone')
+        .in('id', userIds);
+      
+      const userMap = new Map(users?.map(u => [u.id, u]) || []);
+      orderItems.forEach((item: any) => {
+        item.order.user = userMap.get(item.order.user_id);
+      });
+    }
 
     if (orderItems) {
       const groupedOrders = orderItems.reduce((acc: any, item: any) => {
@@ -100,7 +161,21 @@ export default function SupplierOrders() {
           Back to Dashboard
         </Button>
 
-        <h1 className="font-display text-3xl font-bold mb-6">My Orders</h1>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-3xl font-bold">My Orders</h1>
+            {isRealtime && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                <Radio className="h-3 w-3 animate-pulse" />
+                <span>Live</span>
+              </div>
+            )}
+          </div>
+          <Button variant="outline" size="sm" onClick={loadOrders}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
 
         {orders.length > 0 ? (
           <div className="space-y-4">
@@ -112,6 +187,13 @@ export default function SupplierOrders() {
                     <p className="text-sm text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString()}
                     </p>
+                    {order.user && (
+                      <div className="mt-2 text-sm">
+                        <p className="font-medium">{order.user.full_name}</p>
+                        <p className="text-muted-foreground">{order.user.email}</p>
+                        {order.user.phone && <p className="text-muted-foreground">{order.user.phone}</p>}
+                      </div>
+                    )}
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
                     {order.order_status}

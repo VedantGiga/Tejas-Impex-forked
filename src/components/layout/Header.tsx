@@ -50,7 +50,9 @@ export function Header() {
           <span>🇮🇳 Free shipping on orders above ₹999</span>
           <div className="hidden sm:flex items-center gap-4">
             <Link to="/about" className="hover:underline">About Us</Link>
-            <Link to="/track-order" className="hover:underline">Track Order</Link>
+            {isSupplier && (
+              <Link to="/supplier/orders" className="hover:underline">Track Orders</Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="hover:underline font-medium">Admin Panel</Link>
             )}

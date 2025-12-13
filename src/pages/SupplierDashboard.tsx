@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Package, Plus, Edit, Trash2, ShoppingBag, Clock, Check, X } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Bell, Clock, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { getCurrencySymbol } from '@/lib/currency';
@@ -64,9 +64,9 @@ export default function SupplierDashboard() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="font-display text-4xl font-bold">Supplier Dashboard</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/supplier/orders')}>
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              Orders
+            <Button variant="outline" onClick={() => navigate('/supplier/new-orders')}>
+              <Bell className="h-4 w-4 mr-2" />
+              New Orders
             </Button>
             <Button onClick={() => navigate('/supplier/add-product')}>
               <Plus className="h-4 w-4 mr-2" />
