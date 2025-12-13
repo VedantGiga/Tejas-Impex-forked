@@ -27,7 +27,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const { user, profile, isAdmin, isSupplier, signOut } = useAuth();
+  const { user, profile, isAdmin, isSupplier, isFinance, signOut } = useAuth();
   const { itemCount } = useCart();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -111,6 +111,10 @@ export function Header() {
                       <DropdownMenuItem asChild>
                         <Link to="/supplier">Supplier Dashboard</Link>
                       </DropdownMenuItem>
+                    ) : isFinance ? (
+                      <DropdownMenuItem asChild>
+                        <Link to="/finance">Finance Dashboard</Link>
+                      </DropdownMenuItem>
                     ) : (
                       <>
                         <DropdownMenuItem asChild>
@@ -143,8 +147,8 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Wishlist - Hidden for suppliers */}
-            {!isSupplier && (
+            {/* Wishlist - Hidden for suppliers and finance */}
+            {!isSupplier && !isFinance && (
               <Button variant="ghost" size="icon" asChild>
                 <Link to="/wishlist">
                   <Heart className="h-5 w-5" />
@@ -152,8 +156,8 @@ export function Header() {
               </Button>
             )}
 
-            {/* Cart - Hidden for suppliers */}
-            {!isSupplier && (
+            {/* Cart - Hidden for suppliers and finance */}
+            {!isSupplier && !isFinance && (
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <Link to="/cart">
                   <ShoppingCart className="h-5 w-5" />

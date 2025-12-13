@@ -9,6 +9,7 @@ interface AuthContextType {
   profile: Profile | null;
   isAdmin: boolean;
   isSupplier: boolean;
+  isFinance: boolean;
   isUser: boolean;
   isLoading: boolean;
   signUp: (email: string, password: string, fullName: string, role?: 'user' | 'supplier') => Promise<{ error: Error | null }>;
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSupplier, setIsSupplier] = useState(false);
+  const [isFinance, setIsFinance] = useState(false);
   const [isUser, setIsUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -56,10 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const role = data.role;
         setIsAdmin(role === 'admin');
         setIsSupplier(role === 'supplier');
+        setIsFinance(role === 'finance');
         setIsUser(role === 'user');
       } else {
         setIsAdmin(false);
         setIsSupplier(false);
+        setIsFinance(false);
         setIsUser(true);
       }
     } catch (error) {
@@ -83,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setIsAdmin(false);
           setIsSupplier(false);
+          setIsFinance(false);
           setIsUser(false);
         }
         setIsLoading(false);
@@ -136,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setIsAdmin(false);
     setIsSupplier(false);
+    setIsFinance(false);
     setIsUser(false);
     await supabase.auth.signOut();
   };
@@ -153,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       isAdmin,
       isSupplier,
+      isFinance,
       isUser,
       isLoading,
       signUp,
